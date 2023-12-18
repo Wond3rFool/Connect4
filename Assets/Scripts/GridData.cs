@@ -12,12 +12,9 @@ public class GridData
         PlacementData data = new PlacementData(positionToOcupy, ID, placedObjectIndex);
         foreach (var pos in positionToOcupy)
         {
-            if (placedObjects.ContainsKey(pos))
-                throw new Exception($"Dictionary arleady contains this cell position {pos}");
+            if (placedObjects.ContainsKey(pos)) return;
             placedObjects[pos] = data;
         }
-
-
     }
     public void UpdateGridData(Vector3Int oldPosition, Vector3Int newPosition)
     {
@@ -54,6 +51,29 @@ public class GridData
                 return false;
         }
         return true;
+    }
+
+    private Vector3Int MoveInInnerCells(Vector3Int oldPosition)
+    {
+        Vector3Int newPosition = new Vector3Int();
+
+        switch (oldPosition)
+        {
+            case var _ when oldPosition == new Vector3Int(1, 0, 2):
+                newPosition = new Vector3Int(2, 0, 2);
+                break;
+            case var _ when oldPosition == new Vector3Int(2, 0, 2):
+                newPosition = new Vector3Int(2, 0, 1);
+                break;
+            case var _ when oldPosition == new Vector3Int(2, 0, 1):
+                newPosition = new Vector3Int(1, 0, 1);
+                break;
+            case var _ when oldPosition == new Vector3Int(1, 0, 1):
+                newPosition = new Vector3Int(1, 0, 2);
+                break;
+        }
+
+        return newPosition;
     }
 }
 
