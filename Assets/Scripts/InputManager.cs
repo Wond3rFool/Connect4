@@ -11,7 +11,7 @@ public class InputManager : MonoBehaviour
     private LayerMask placementLayer;
 
     [SerializeField]
-    private float raycastMaxDistance = 100f;
+    private float raycastMaxDistance;
 
     private Vector3 lastPosition;
 
