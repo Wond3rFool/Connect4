@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   objects:
   - <Name>k__BackingField: WhiteSphere
-    <ID>k__BackingField: 0
+    <ID>k__BackingField: 1
     <Size>k__BackingField: {x: 1, y: 1}
     <Prefab>k__BackingField: {fileID: 4158388827643144373, guid: dc5f5e7f38956f343a88d5c80dd36b55, type: 3}
   - <Name>k__BackingField: BlackSphere
-    <ID>k__BackingField: 1
+    <ID>k__BackingField: 2
     <Size>k__BackingField: {x: 1, y: 1}
     <Prefab>k__BackingField: {fileID: 6285454856252551815, guid: 2ef2a6c79559a084884a795037777fad, type: 3}

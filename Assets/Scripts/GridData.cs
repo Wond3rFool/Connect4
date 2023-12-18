@@ -16,8 +16,22 @@ public class GridData
                 throw new Exception($"Dictionary arleady contains this cell position {pos}");
             placedObjects[pos] = data;
         }
-    }
 
+
+    }
+    public void UpdateGridData(Vector3Int oldPosition, Vector3Int newPosition)
+    {
+        if (placedObjects.ContainsKey(oldPosition))
+        {
+            PlacementData data = placedObjects[oldPosition];
+
+            // Remove the object from the old position
+            placedObjects.Remove(oldPosition);
+
+            // Add the object to the new position
+            placedObjects[newPosition] = data;
+        }
+    }
     private List<Vector3Int> CalculatePositions(Vector3Int gridPosition, Vector2Int objectSize)
     {
         List<Vector3Int> returnVal = new List<Vector3Int>();
