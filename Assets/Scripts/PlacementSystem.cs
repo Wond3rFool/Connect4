@@ -15,15 +15,13 @@ public class PlacementSystem : MonoBehaviour
     private ObjectDatabaseSO database;
     private int selectedObjectIndex = -1;
 
-
-
     private void Start() 
     {
-        StopPlacement();
+        StartPlacement(1);
     }
     public void StartPlacement(int ID) 
     {
-        StopPlacement();
+        //StopPlacement();
         selectedObjectIndex = database.objects.FindIndex(data => data.ID == ID);
         if(selectedObjectIndex < 0) 
         {
@@ -43,8 +41,6 @@ public class PlacementSystem : MonoBehaviour
     }
     private void PlaceObject()
     {
-        if (inputManager.IsPointerOverUI()) return;
-
         Vector3 mousePosition = inputManager.GetSelectedMapPosition();
         Vector3Int gridPosition = grid.WorldToCell(mousePosition);
         GameObject newSphere = Instantiate(database.objects[selectedObjectIndex].Prefab);

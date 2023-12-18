@@ -28,8 +28,6 @@ public class InputManager : MonoBehaviour
             OnExit?.Invoke();
     }
 
-    public bool IsPointerOverUI() => EventSystem.current.IsPointerOverGameObject();
-
     public Vector3 GetSelectedMapPosition()
     {
         Vector3 mousePosition = Input.mousePosition;

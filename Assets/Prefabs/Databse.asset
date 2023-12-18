@@ -12,4 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f6e0a06f4ead5040868ed412966a757, type: 3}
   m_Name: Databse
   m_EditorClassIdentifier: 
-  objects: []
+  objects:
+  - <Name>k__BackingField: WhiteSphere
+    <ID>k__BackingField: 0
+    <Size>k__BackingField: {x: 1, y: 1}
+    <Prefab>k__BackingField: {fileID: 4158388827643144373, guid: dc5f5e7f38956f343a88d5c80dd36b55, type: 3}
+  - <Name>k__BackingField: BlackSphere
+    <ID>k__BackingField: 1
+    <Size>k__BackingField: {x: 1, y: 1}
+    <Prefab>k__BackingField: {fileID: 6285454856252551815, guid: 2ef2a6c79559a084884a795037777fad, type: 3}
