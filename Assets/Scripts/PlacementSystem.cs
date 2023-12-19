@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 public class PlacementSystem : MonoBehaviour
 {
@@ -14,7 +16,7 @@ public class PlacementSystem : MonoBehaviour
     private ObjectDatabaseSO database;
     private int selectedObjectIndex = -1;
 
-    private GridData gridData, sphereData;
+    private GridData sphereData;
 
     private Renderer previewRenderer;
 
@@ -22,10 +24,13 @@ public class PlacementSystem : MonoBehaviour
 
     private int currentPlayer = 1;
 
+    private bool whiteWins = false;
+    private bool blackWins = false;
+    private bool isDraw = false;
+
     private void Start() 
     {
         StartPlacement(currentPlayer);
-        gridData = new();
         sphereData = new();
         previewRenderer = cellIndicator.GetComponentInChildren<Renderer>();
     }
@@ -60,21 +65,42 @@ public class PlacementSystem : MonoBehaviour
         newSphere.transform.position = grid.CellToWorld(gridPosition);
         placedGameObject.Add(newSphere);
 
-        GridData selectedData = database.objects[selectedObjectIndex].ID == 0 ? gridData : sphereData;
-
-        selectedData.AddObjectAt(gridPosition,
+        sphereData.AddObjectAt(gridPosition,
             database.objects[selectedObjectIndex].Size,
             database.objects[selectedObjectIndex].ID,
             placedGameObject.Count - 1);
 
         StopPlacement();
         RotatePositions();
-        EndTurn();
+        StartCoroutine(EndTurn(1.0f));
     }
 
-    private void EndTurn()
+    private IEnumerator EndTurn(float duration)
     {
-        // Switch the turn to the next player
+        float elapsedTime = 0f;
+        Vector3 startingPosition = transform.position;
+
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        // Then, based on the results, you can handle the game state accordingly
+        if (whiteWins && blackWins)
+        {
+            Debug.Log("It's a draw!");
+            // Handle the draw
+        }
+        else if (whiteWins)
+        {
+            Debug.Log("White wins!");
+            // Handle white wins
+        }
+        else if (blackWins)
+        {
+            Debug.Log("Black wins!");
+            // Handle black wins
+        }
         currentPlayer = (currentPlayer == 1) ? 2 : 1;
         StartPlacement(currentPlayer);
     }
@@ -84,17 +110,29 @@ public class PlacementSystem : MonoBehaviour
         foreach (var item in placedGameObject)
         {
             Vector3Int oldPosition = grid.WorldToCell(item.transform.position);
-            Debug.Log(oldPosition);
-
-            // Call the appropriate UpdateGridData based on the object's ID
-            GridData selectedData = (item.CompareTag("Sphere")) ? sphereData : gridData;
 
             // Call the UpdateGridData function to get the new position
             Vector3Int newPosition;
-            selectedData.UpdateGridData(oldPosition, out newPosition);
+            sphereData.UpdateGridData(oldPosition, out newPosition);
 
             // Smoothly move the game object to the new position using Lerp
             StartCoroutine(MoveObjectLerp(item.transform, grid.CellToWorld(newPosition), 1.0f));
+
+            if (sphereData.CheckFourSpheresInARow(1))
+            {
+                whiteWins = true;
+            }
+
+            if (sphereData.CheckFourSpheresInARow(2))
+            {
+                blackWins = true;
+            }
+
+            // Check for a draw
+            if (!whiteWins && !blackWins && AllSpheresPlaced())
+            {
+                isDraw = true;
+            }
         }
     }
 
@@ -117,9 +155,8 @@ public class PlacementSystem : MonoBehaviour
 
     private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex) 
     {
-        GridData selectedData = database.objects[selectedObjectIndex].ID == 0 ? gridData : sphereData;
-
-        return selectedData.CanPlaceObjectAt(gridPosition, database.objects[selectedObjectIndex].Size);
+     
+        return sphereData.CanPlaceObjectAt(gridPosition, database.objects[selectedObjectIndex].Size);
     }
     private void Update() 
     {
@@ -132,6 +169,14 @@ public class PlacementSystem : MonoBehaviour
 
         mouseIndicator.transform.position = mousePosition;
         cellIndicator.transform.position = grid.CellToWorld(gridPosition);
+
+        
     }
 
+    private bool AllSpheresPlaced()
+    {
+        // Check if the total number of placed spheres equals the expected total
+        int totalExpectedSpheres = database.objects.Count; // Assuming each object has only one sphere
+        return placedGameObject.Count == totalExpectedSpheres;
+    }
 }

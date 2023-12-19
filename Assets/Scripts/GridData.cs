@@ -49,6 +49,8 @@ public class GridData
 
             // Add the object to the new position
             placedObjects[newPosition] = data;
+
+            Debug.Log("test");
         }
     }
     private List<Vector3Int> CalculatePositions(Vector3Int gridPosition, Vector2Int objectSize)
@@ -64,10 +66,10 @@ public class GridData
         return returnVal;
     }
 
-    public bool CanPlaceObjectAt(Vector3Int gridPosition, Vector2Int objectSize) 
+    public bool CanPlaceObjectAt(Vector3Int gridPosition, Vector2Int objectSize)
     {
         List<Vector3Int> positionToOccupy = CalculatePositions(gridPosition, objectSize);
-        foreach(var pos in positionToOccupy) 
+        foreach (var pos in positionToOccupy)
         {
             if (placedObjects.ContainsKey(pos))
                 return false;
@@ -128,9 +130,83 @@ public class GridData
         }
         return newPosition;
     }
-}
-   
 
+    public bool CheckFourSpheresInARow(int targetID)
+    {
+        foreach (var position in placedObjects.Keys)
+        {
+            PlacementData data = placedObjects[position];
+
+            // Check only for spheres of the target ID
+            if (data._ID == targetID)
+            {
+                if (CheckAdjacentSpheres(position, targetID) || CheckDiagonalSpheres(position, targetID))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private bool CheckAdjacentSpheres(Vector3Int position, int targetID)
+    {
+        int count = 0;
+
+        // Check horizontally
+        count += CountAdjacentSpheres(position, new Vector3Int(1, 0, 0), targetID);
+        count += CountAdjacentSpheres(position, new Vector3Int(-1, 0, 0), targetID);
+
+        // Check vertically
+        count += CountAdjacentSpheres(position, new Vector3Int(0, 0, 1), targetID);
+        count += CountAdjacentSpheres(position, new Vector3Int(0, 0, -1), targetID);
+
+        return count >= 3;
+    }
+    private bool CheckDiagonalSpheres(Vector3Int position, int targetID)
+    {
+        int count = 0;
+
+        // Check diagonally (bottom-left to top-right)
+        count += CountAdjacentSpheres(position, new Vector3Int(1, 0, 1), targetID);
+        count += CountAdjacentSpheres(position, new Vector3Int(-1, 0, -1), targetID);
+
+        // Check diagonally (top-left to bottom-right)
+        count += CountAdjacentSpheres(position, new Vector3Int(1, 0, -1), targetID);
+        count += CountAdjacentSpheres(position, new Vector3Int(-1, 0, 1), targetID);
+
+        return count >= 3;
+    }
+
+    private int CountAdjacentSpheres(Vector3Int position, Vector3Int direction, int targetID)
+    {
+        int count = 0;
+
+        for (int i = 1; i < 4; i++)
+        {
+            Vector3Int adjacentPosition = position + (direction * i);
+
+            if (placedObjects.ContainsKey(adjacentPosition))
+            {
+                if (placedObjects[adjacentPosition]._ID == targetID)
+                {
+                    count++;
+                }
+                else
+                {
+                    break; // Stop counting if a different ID is encountered
+                }
+            }
+            else
+            {
+                // Position not found in dictionary, break or handle accordingly
+                break;
+            }
+        }
+
+        return count;
+    }
+}
 
 public class PlacementData
 {
