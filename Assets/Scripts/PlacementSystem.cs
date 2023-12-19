@@ -27,11 +27,12 @@ public class PlacementSystem : MonoBehaviour
     private bool whiteWins = false;
     private bool blackWins = false;
     private bool isDraw = false;
+    private bool firstTurn = true;
 
-    private void Start() 
+    private void Awake() 
     {
         StartPlacement(currentPlayer);
-        sphereData = new();
+        sphereData = new GridData();
         previewRenderer = cellIndicator.GetComponentInChildren<Renderer>();
     }
     public void StartPlacement(int ID) 
@@ -58,7 +59,7 @@ public class PlacementSystem : MonoBehaviour
         Vector3 mousePosition = inputManager.GetSelectedMapPosition();
         Vector3Int gridPosition = grid.WorldToCell(mousePosition);
 
-        bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex);
+        bool placementValidity = CheckPlacementValidity(gridPosition);
         if (!placementValidity) return;
 
         GameObject newSphere = Instantiate(database.objects[selectedObjectIndex].Prefab);
@@ -68,11 +69,13 @@ public class PlacementSystem : MonoBehaviour
         sphereData.AddObjectAt(gridPosition,
             database.objects[selectedObjectIndex].Size,
             database.objects[selectedObjectIndex].ID,
-            placedGameObject.Count - 1);
+            selectedObjectIndex);
 
         StopPlacement();
-        RotatePositions();
+        if(!firstTurn)
+            RotatePositions();
         StartCoroutine(EndTurn(1.0f));
+        firstTurn = false;
     }
 
     private IEnumerator EndTurn(float duration)
@@ -103,6 +106,7 @@ public class PlacementSystem : MonoBehaviour
         }
         currentPlayer = (currentPlayer == 1) ? 2 : 1;
         StartPlacement(currentPlayer);
+        sphereData.ClearPositions();
     }
 
     private void RotatePositions()
@@ -112,11 +116,10 @@ public class PlacementSystem : MonoBehaviour
             Vector3Int oldPosition = grid.WorldToCell(item.transform.position);
 
             // Call the UpdateGridData function to get the new position
-            Vector3Int newPosition;
-            sphereData.UpdateGridData(oldPosition, out newPosition);
+            Vector3Int newPosition = sphereData.UpdateGridData(oldPosition);
 
             // Smoothly move the game object to the new position using Lerp
-            StartCoroutine(MoveObjectLerp(item.transform, grid.CellToWorld(newPosition), 1.0f));
+            StartCoroutine(MoveObjectLerp(item.transform, grid.CellToWorld(newPosition), 0.25f));
 
             if (sphereData.CheckFourSpheresInARow(1))
             {
@@ -153,10 +156,9 @@ public class PlacementSystem : MonoBehaviour
         transform.position = targetPosition;
     }
 
-    private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex) 
+    private bool CheckPlacementValidity(Vector3Int gridPosition) 
     {
-     
-        return sphereData.CanPlaceObjectAt(gridPosition, database.objects[selectedObjectIndex].Size);
+        return sphereData.CanPlaceObjectAt(gridPosition);
     }
     private void Update() 
     {
@@ -164,13 +166,11 @@ public class PlacementSystem : MonoBehaviour
         Vector3 mousePosition = inputManager.GetSelectedMapPosition();
         Vector3Int gridPosition = grid.WorldToCell(mousePosition);
 
-        bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex);
+        bool placementValidity = CheckPlacementValidity(gridPosition);
         previewRenderer.material.color = placementValidity ? Color.white : Color.red;
 
         mouseIndicator.transform.position = mousePosition;
         cellIndicator.transform.position = grid.CellToWorld(gridPosition);
-
-        
     }
 
     private bool AllSpheresPlaced()

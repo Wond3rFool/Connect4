@@ -5,75 +5,76 @@ using UnityEngine;
 
 public class GridData
 {
-    Dictionary<Vector3Int, PlacementData> placedObjects = new();
-
+    Dictionary<Vector3Int, PlacementData> placedObjects = new Dictionary<Vector3Int, PlacementData>();
+    private HashSet<Vector3Int> positionsToKeep = new HashSet<Vector3Int>();
     public void AddObjectAt(Vector3Int gridPosition, Vector2Int objectSize, int ID, int placedObjectIndex)
     {
-        List<Vector3Int> positionToOcupy = CalculatePositions(gridPosition, objectSize);
+        Vector3Int positionToOcupy = CalculatePosition(gridPosition);
         PlacementData data = new PlacementData(positionToOcupy, ID, placedObjectIndex);
-        foreach (var pos in positionToOcupy)
-        {
-            if (placedObjects.ContainsKey(pos)) return;
-            placedObjects[pos] = data;
-        }
+        
+        if (placedObjects.ContainsKey(positionToOcupy))
+            return;
+        
+        placedObjects[positionToOcupy] = data;
+        
     }
-    public void UpdateGridData(Vector3Int oldPosition, out Vector3Int newPositionInGrid)
+    public Vector3Int UpdateGridData(Vector3Int oldPosition)
     {
         // Check if the object is in the inner grid
         if (IsInInnerGrid(oldPosition))
         {
             // Call the function for inner grid movement
             Vector3Int newPositionInInnerGrid = MoveObjectsInInnerCell(oldPosition);
-            newPositionInGrid = newPositionInInnerGrid;
             // Move the object in the inner grid
-            MoveObject(oldPosition, newPositionInInnerGrid);
+            return MoveObject(oldPosition, newPositionInInnerGrid);
+
         }
         else
         {
             // Call the function for outer grid movement
             Vector3Int newPositionInOuterGrid = MoveObjectInOuterCell(oldPosition);
-            newPositionInGrid = newPositionInOuterGrid;
             // Move the object in the outer grid
-            MoveObject(oldPosition, newPositionInOuterGrid);
+            return MoveObject(oldPosition, newPositionInOuterGrid);
         }
     }
 
-    private void MoveObject(Vector3Int oldPosition, Vector3Int newPosition)
+    private Vector3Int MoveObject(Vector3Int oldPosition, Vector3Int newPosition)
     {
         if (placedObjects.ContainsKey(oldPosition))
         {
             PlacementData data = placedObjects[oldPosition];
-
-            // Remove the object from the old position
-            placedObjects.Remove(oldPosition);
-
+            positionsToKeep.Add(newPosition);
             // Add the object to the new position
             placedObjects[newPosition] = data;
 
-            Debug.Log("test");
+            if(!positionsToKeep.Contains(oldPosition))
+                placedObjects.Remove(oldPosition);
+
+            Debug.Log($"Moved object from {oldPosition} to {newPosition}");
+            return newPosition;
+        }
+        else
+        {
+            Debug.LogError($"Object not found at {oldPosition}");
+            return newPosition;
         }
     }
-    private List<Vector3Int> CalculatePositions(Vector3Int gridPosition, Vector2Int objectSize)
+    public void ClearPositions() 
     {
-        List<Vector3Int> returnVal = new List<Vector3Int>();
-        for (int x = 0; x < objectSize.x; x++)
-        {
-            for (int y = 0; y < objectSize.y; y++)  // Fix: Change x to y here
-            {
-                returnVal.Add(gridPosition + new Vector3Int(x, 0, y));
-            }
-        }
-        return returnVal;
+        positionsToKeep.Clear();
+    }
+    private Vector3Int CalculatePosition(Vector3Int gridPosition)
+    { 
+        return gridPosition;
     }
 
-    public bool CanPlaceObjectAt(Vector3Int gridPosition, Vector2Int objectSize)
+    public bool CanPlaceObjectAt(Vector3Int gridPosition)
     {
-        List<Vector3Int> positionToOccupy = CalculatePositions(gridPosition, objectSize);
-        foreach (var pos in positionToOccupy)
-        {
-            if (placedObjects.ContainsKey(pos))
+        Vector3Int positionToOccupy = CalculatePosition(gridPosition);
+
+        if (placedObjects.ContainsKey(positionToOccupy))
                 return false;
-        }
+      
         return true;
     }
     private bool IsInInnerGrid(Vector3Int position)
@@ -84,20 +85,21 @@ public class GridData
     {
         Vector3Int newPosition = new Vector3Int();
 
-        switch (oldPosition)
+        if (oldPosition == new Vector3Int(1, 0, 2))
         {
-            case var _ when oldPosition == new Vector3Int(1, 0, 2):
-                newPosition = new Vector3Int(2, 0, 2);
-                break;
-            case var _ when oldPosition == new Vector3Int(2, 0, 2):
-                newPosition = new Vector3Int(2, 0, 1);
-                break;
-            case var _ when oldPosition == new Vector3Int(2, 0, 1):
-                newPosition = new Vector3Int(1, 0, 1);
-                break;
-            case var _ when oldPosition == new Vector3Int(1, 0, 1):
-                newPosition = new Vector3Int(1, 0, 2);
-                break;
+            newPosition = new Vector3Int(2, 0, 2);
+        }
+        else if (oldPosition == new Vector3Int(2, 0, 2))
+        {
+            newPosition = new Vector3Int(2, 0, 1);
+        }
+        else if (oldPosition == new Vector3Int(2, 0, 1))
+        {
+            newPosition = new Vector3Int(1, 0, 1);
+        }
+        else if (oldPosition == new Vector3Int(1, 0, 1))
+        {
+            newPosition = new Vector3Int(1, 0, 2);
         }
 
         return newPosition;
@@ -130,7 +132,6 @@ public class GridData
         }
         return newPosition;
     }
-
     public bool CheckFourSpheresInARow(int targetID)
     {
         foreach (var position in placedObjects.Keys)
@@ -148,7 +149,6 @@ public class GridData
         }
         return false;
     }
-
     private bool CheckAdjacentSpheres(Vector3Int position, int targetID)
     {
         int count = 0;
@@ -177,7 +177,6 @@ public class GridData
 
         return count >= 3;
     }
-
     private int CountAdjacentSpheres(Vector3Int position, Vector3Int direction, int targetID)
     {
         int count = 0;
@@ -207,14 +206,13 @@ public class GridData
         return count;
     }
 }
-
 public class PlacementData
 {
-    public List<Vector3Int> _occupiedPositions;
+    public Vector3Int _occupiedPositions;
     public int _ID { get; private set; }
     public int _placedObjectIndex { get; private set; }
 
-    public PlacementData(List<Vector3Int> occupiedPositions, int ID, int placedObjectIndex)
+    public PlacementData(Vector3Int occupiedPositions, int ID, int placedObjectIndex)
     {
         _occupiedPositions = occupiedPositions;
         _ID = ID;
