@@ -67,11 +67,8 @@ public class PlacementSystem : MonoBehaviour
             database.objects[selectedObjectIndex].ID,
             placedGameObject.Count - 1);
 
-
-        foreach(var item in placedGameObject)
-        {
-            Debug.Log(grid.WorldToCell(item.gameObject.transform.position));
-        }
+        StopPlacement();
+        RotatePositions();
         EndTurn();
     }
 
@@ -80,6 +77,42 @@ public class PlacementSystem : MonoBehaviour
         // Switch the turn to the next player
         currentPlayer = (currentPlayer == 1) ? 2 : 1;
         StartPlacement(currentPlayer);
+    }
+
+    private void RotatePositions()
+    {
+        foreach (var item in placedGameObject)
+        {
+            Vector3Int oldPosition = grid.WorldToCell(item.transform.position);
+            Debug.Log(oldPosition);
+
+            // Call the appropriate UpdateGridData based on the object's ID
+            GridData selectedData = (item.CompareTag("Sphere")) ? sphereData : gridData;
+
+            // Call the UpdateGridData function to get the new position
+            Vector3Int newPosition;
+            selectedData.UpdateGridData(oldPosition, out newPosition);
+
+            // Smoothly move the game object to the new position using Lerp
+            StartCoroutine(MoveObjectLerp(item.transform, grid.CellToWorld(newPosition), 1.0f));
+        }
+    }
+
+    // Coroutine for smoothly moving an object using Lerp
+    private IEnumerator MoveObjectLerp(Transform transform, Vector3 targetPosition, float duration)
+    {
+        float elapsedTime = 0f;
+        Vector3 startingPosition = transform.position;
+
+        while (elapsedTime < duration)
+        {
+            transform.position = Vector3.Lerp(startingPosition, targetPosition, elapsedTime / duration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure the object reaches the exact target position
+        transform.position = targetPosition;
     }
 
     private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex) 

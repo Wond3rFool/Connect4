@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class GridData
@@ -16,7 +17,28 @@ public class GridData
             placedObjects[pos] = data;
         }
     }
-    public void UpdateGridData(Vector3Int oldPosition, Vector3Int newPosition)
+    public void UpdateGridData(Vector3Int oldPosition, out Vector3Int newPositionInGrid)
+    {
+        // Check if the object is in the inner grid
+        if (IsInInnerGrid(oldPosition))
+        {
+            // Call the function for inner grid movement
+            Vector3Int newPositionInInnerGrid = MoveObjectsInInnerCell(oldPosition);
+            newPositionInGrid = newPositionInInnerGrid;
+            // Move the object in the inner grid
+            MoveObject(oldPosition, newPositionInInnerGrid);
+        }
+        else
+        {
+            // Call the function for outer grid movement
+            Vector3Int newPositionInOuterGrid = MoveObjectInOuterCell(oldPosition);
+            newPositionInGrid = newPositionInOuterGrid;
+            // Move the object in the outer grid
+            MoveObject(oldPosition, newPositionInOuterGrid);
+        }
+    }
+
+    private void MoveObject(Vector3Int oldPosition, Vector3Int newPosition)
     {
         if (placedObjects.ContainsKey(oldPosition))
         {
@@ -52,8 +74,11 @@ public class GridData
         }
         return true;
     }
-
-    private Vector3Int MoveInInnerCells(Vector3Int oldPosition)
+    private bool IsInInnerGrid(Vector3Int position)
+    {
+        return position.x >= 1 && position.x <= 2 && position.z >= 1 && position.z <= 2;
+    }
+    private Vector3Int MoveObjectsInInnerCell(Vector3Int oldPosition)
     {
         Vector3Int newPosition = new Vector3Int();
 
@@ -75,7 +100,37 @@ public class GridData
 
         return newPosition;
     }
+    private Vector3Int MoveObjectInOuterCell(Vector3Int oldPosition)
+    {
+        Vector3Int newPosition = new Vector3Int(oldPosition.x, oldPosition.y, oldPosition.z);
+
+        if (oldPosition.x == 0 && oldPosition.z < 3)  // Check if moving right stays within the outer grid
+        {
+            newPosition.z += 1;
+            return newPosition;
+        }
+        if (oldPosition.x < 3 && oldPosition.z == 3)  // Check if moving right stays within the outer grid
+        {
+            newPosition.x += 1;
+            return newPosition;
+        }
+
+        if (oldPosition.x == 3 && oldPosition.z > 0)  // Check if moving down stays within the outer grid
+        {
+            newPosition.z -= 1;
+            return newPosition;
+        }
+
+        if (oldPosition.x > 0 && oldPosition.z == 0)  // Check if moving left stays within the outer grid
+        {
+            newPosition.x -= 1;
+            return newPosition;
+        }
+        return newPosition;
+    }
 }
+   
+
 
 public class PlacementData
 {
