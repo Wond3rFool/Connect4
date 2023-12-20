@@ -7,6 +7,7 @@ using UnityEngine.EventSystems;
 
 public class InputManager : MonoBehaviour
 {
+    #region Variables
     [SerializeField]
     private Camera sceneCamera;
 
@@ -18,16 +19,18 @@ public class InputManager : MonoBehaviour
 
     private Vector3 lastPosition;
 
-    public event Action OnClicked, OnExit;
+    public event Action OnClicked;
+    #endregion
 
+    #region Unity Methods
     private void Update()
     {
         if(Input.GetMouseButtonDown(0)) 
             OnClicked?.Invoke();
-        if(Input.GetKey(KeyCode.Escape))
-            OnExit?.Invoke();
     }
+    #endregion
 
+    #region Get Positions Methods
     public Vector3 GetSelectedMapPosition()
     {
         Vector3 mousePosition = Input.mousePosition;
@@ -41,4 +44,5 @@ public class InputManager : MonoBehaviour
         }
         return lastPosition;
     }
+    #endregion
 }

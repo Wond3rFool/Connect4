@@ -5,8 +5,12 @@ using UnityEngine;
 
 public class GridData
 {
+    #region Variable Storage
     private Dictionary<Vector3Int, PlacementData> placedObjects = new Dictionary<Vector3Int, PlacementData>();
     private Dictionary<Vector3Int, PlacementData> positionsToKeep = new Dictionary<Vector3Int, PlacementData>();
+    #endregion
+
+    #region Object Placement
     public void AddObjectAt(Vector3Int gridPosition, Vector2Int objectSize, int ID, int placedObjectIndex)
     {
         Vector3Int positionToOcupy = CalculatePosition(gridPosition);
@@ -18,6 +22,22 @@ public class GridData
         placedObjects[positionToOcupy] = data;
 
     }
+    private Vector3Int CalculatePosition(Vector3Int gridPosition)
+    {
+        return gridPosition;
+    }
+    public bool CanPlaceObjectAt(Vector3Int gridPosition)
+    {
+        Vector3Int positionToOccupy = CalculatePosition(gridPosition);
+
+        if (placedObjects.ContainsKey(positionToOccupy))
+            return false;
+
+        return true;
+    }
+    #endregion
+
+    #region Grid and Object Manipulation
     public Vector3Int UpdateGridData(Vector3Int oldPosition, int ID)
     {
         // Check if the object is in the inner grid
@@ -37,7 +57,6 @@ public class GridData
             return MoveObject(oldPosition, newPositionInOuterGrid, ID);
         }
     }
-
     private Vector3Int MoveObject(Vector3Int oldPosition, Vector3Int newPosition, int ID)
     {
         if (placedObjects.ContainsKey(oldPosition))
@@ -65,20 +84,6 @@ public class GridData
     public void ClearPositions()
     {
         positionsToKeep.Clear();
-    }
-    private Vector3Int CalculatePosition(Vector3Int gridPosition)
-    {
-        return gridPosition;
-    }
-
-    public bool CanPlaceObjectAt(Vector3Int gridPosition)
-    {
-        Vector3Int positionToOccupy = CalculatePosition(gridPosition);
-
-        if (placedObjects.ContainsKey(positionToOccupy))
-            return false;
-
-        return true;
     }
     private bool IsInInnerGrid(Vector3Int position)
     {
@@ -135,6 +140,9 @@ public class GridData
         }
         return newPosition;
     }
+    #endregion
+
+    #region Grid Searching and clearing
     public bool CheckWinCondition(string playerTag, Grid grid)
     {
         foreach (var position in placedObjects.Keys)
@@ -151,7 +159,6 @@ public class GridData
 
         return false;
     }
-
     private bool CheckConsecutive(Vector3Int start, string playerTag, Vector3Int direction, Grid grid)
     {
         int consecutiveCount = 0;
@@ -185,13 +192,11 @@ public class GridData
 
         return false;
     }
-
-    private bool IsInGridRange(Vector3Int position)
+    public void ClearObjects()
     {
-        // Check if the position is within the valid range of your grid
-        return position.x >= 0 && position.x <= 3 &&
-               position.z >= 0 && position.z <= 3;  // Assuming the grid is on the y
+        placedObjects.Clear();
     }
+    #endregion
 }
 public class PlacementData
 {
