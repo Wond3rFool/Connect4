@@ -116,7 +116,7 @@ GameObject:
   - component: {fileID: 6375587778654349433}
   m_Layer: 0
   m_Name: BlackSphere
-  m_TagString: Sphere
+  m_TagString: Player2
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

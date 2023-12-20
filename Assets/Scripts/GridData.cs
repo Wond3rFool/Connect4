@@ -5,20 +5,20 @@ using UnityEngine;
 
 public class GridData
 {
-    Dictionary<Vector3Int, PlacementData> placedObjects = new Dictionary<Vector3Int, PlacementData>();
-    private HashSet<Vector3Int> positionsToKeep = new HashSet<Vector3Int>();
+    private Dictionary<Vector3Int, PlacementData> placedObjects = new Dictionary<Vector3Int, PlacementData>();
+    private Dictionary<Vector3Int, PlacementData> positionsToKeep = new Dictionary<Vector3Int, PlacementData>();
     public void AddObjectAt(Vector3Int gridPosition, Vector2Int objectSize, int ID, int placedObjectIndex)
     {
         Vector3Int positionToOcupy = CalculatePosition(gridPosition);
-        PlacementData data = new PlacementData(positionToOcupy, ID, placedObjectIndex);
-        
+        PlacementData data = new PlacementData(ID, placedObjectIndex);
+
         if (placedObjects.ContainsKey(positionToOcupy))
             return;
-        
+
         placedObjects[positionToOcupy] = data;
-        
+
     }
-    public Vector3Int UpdateGridData(Vector3Int oldPosition)
+    public Vector3Int UpdateGridData(Vector3Int oldPosition, int ID)
     {
         // Check if the object is in the inner grid
         if (IsInInnerGrid(oldPosition))
@@ -26,7 +26,7 @@ public class GridData
             // Call the function for inner grid movement
             Vector3Int newPositionInInnerGrid = MoveObjectsInInnerCell(oldPosition);
             // Move the object in the inner grid
-            return MoveObject(oldPosition, newPositionInInnerGrid);
+            return MoveObject(oldPosition, newPositionInInnerGrid, ID);
 
         }
         else
@@ -34,23 +34,26 @@ public class GridData
             // Call the function for outer grid movement
             Vector3Int newPositionInOuterGrid = MoveObjectInOuterCell(oldPosition);
             // Move the object in the outer grid
-            return MoveObject(oldPosition, newPositionInOuterGrid);
+            return MoveObject(oldPosition, newPositionInOuterGrid, ID);
         }
     }
 
-    private Vector3Int MoveObject(Vector3Int oldPosition, Vector3Int newPosition)
+    private Vector3Int MoveObject(Vector3Int oldPosition, Vector3Int newPosition, int ID)
     {
         if (placedObjects.ContainsKey(oldPosition))
         {
             PlacementData data = placedObjects[oldPosition];
-            positionsToKeep.Add(newPosition);
             // Add the object to the new position
             placedObjects[newPosition] = data;
+            positionsToKeep[newPosition] = data;
 
-            if(!positionsToKeep.Contains(oldPosition))
+            // Check if the old position is in positionsToKeep
+            if (!positionsToKeep.ContainsKey(oldPosition))
+            {
+                // If it's not in positionsToKeep, remove it
                 placedObjects.Remove(oldPosition);
-
-            Debug.Log($"Moved object from {oldPosition} to {newPosition}");
+                
+            }
             return newPosition;
         }
         else
@@ -59,12 +62,12 @@ public class GridData
             return newPosition;
         }
     }
-    public void ClearPositions() 
+    public void ClearPositions()
     {
         positionsToKeep.Clear();
     }
     private Vector3Int CalculatePosition(Vector3Int gridPosition)
-    { 
+    {
         return gridPosition;
     }
 
@@ -73,8 +76,8 @@ public class GridData
         Vector3Int positionToOccupy = CalculatePosition(gridPosition);
 
         if (placedObjects.ContainsKey(positionToOccupy))
-                return false;
-      
+            return false;
+
         return true;
     }
     private bool IsInInnerGrid(Vector3Int position)
@@ -132,92 +135,76 @@ public class GridData
         }
         return newPosition;
     }
-    public bool CheckFourSpheresInARow(int targetID)
+    public bool CheckWinCondition(string playerTag, Grid grid)
     {
         foreach (var position in placedObjects.Keys)
         {
-            PlacementData data = placedObjects[position];
-
-            // Check only for spheres of the target ID
-            if (data._ID == targetID)
+            if (CheckConsecutive(position, playerTag, new Vector3Int(1, 0, 0), grid) ||  // Check horizontally (right)
+                CheckConsecutive(position, playerTag, new Vector3Int(0, 0, 1), grid) ||  // Check vertically (down)
+                CheckConsecutive(position, playerTag, new Vector3Int(1, 0, 1), grid) ||  // Check diagonally (up-right)
+                CheckConsecutive(position, playerTag, new Vector3Int(1, 0, -1), grid))    // Check diagonally (up-left)
             {
-                if (CheckAdjacentSpheres(position, targetID) || CheckDiagonalSpheres(position, targetID))
-                {
-                    return true;
-                }
+                Debug.Log($"Win condition met for player with tag {playerTag} at position {position}");
+                return true;
             }
         }
+
         return false;
     }
-    private bool CheckAdjacentSpheres(Vector3Int position, int targetID)
+
+    private bool CheckConsecutive(Vector3Int start, string playerTag, Vector3Int direction, Grid grid)
     {
-        int count = 0;
+        int consecutiveCount = 0;
 
-        // Check horizontally
-        count += CountAdjacentSpheres(position, new Vector3Int(1, 0, 0), targetID);
-        count += CountAdjacentSpheres(position, new Vector3Int(-1, 0, 0), targetID);
-
-        // Check vertically
-        count += CountAdjacentSpheres(position, new Vector3Int(0, 0, 1), targetID);
-        count += CountAdjacentSpheres(position, new Vector3Int(0, 0, -1), targetID);
-
-        return count >= 3;
-    }
-    private bool CheckDiagonalSpheres(Vector3Int position, int targetID)
-    {
-        int count = 0;
-
-        // Check diagonally (bottom-left to top-right)
-        count += CountAdjacentSpheres(position, new Vector3Int(1, 0, 1), targetID);
-        count += CountAdjacentSpheres(position, new Vector3Int(-1, 0, -1), targetID);
-
-        // Check diagonally (top-left to bottom-right)
-        count += CountAdjacentSpheres(position, new Vector3Int(1, 0, -1), targetID);
-        count += CountAdjacentSpheres(position, new Vector3Int(-1, 0, 1), targetID);
-
-        return count >= 3;
-    }
-    private int CountAdjacentSpheres(Vector3Int position, Vector3Int direction, int targetID)
-    {
-        int count = 0;
-
-        for (int i = 1; i < 4; i++)
+        for (int i = -2; i <= 2; i++) // Iterate over a larger range to check three consecutive placements
         {
-            Vector3Int adjacentPosition = position + (direction * i);
+            Vector3Int currentPos = start + (direction * i);
 
-            if (placedObjects.ContainsKey(adjacentPosition))
+            // Use GameObject.FindGameObjectsWithTag to find game objects with the specified tag
+            GameObject[] spheresWithTag = GameObject.FindGameObjectsWithTag(playerTag);
+
+            // Convert the positions of the spheres to grid positions
+            Vector3Int[] sphereGridPositions = Array.ConvertAll(spheresWithTag, sphere => grid.WorldToCell(sphere.transform.position));
+
+            // Check if the current position is in the array of grid positions
+            if (Array.Exists(sphereGridPositions, pos => pos == currentPos))
             {
-                if (placedObjects[adjacentPosition]._ID == targetID)
+                consecutiveCount++;
+
+                if (consecutiveCount == 4)
                 {
-                    count++;
-                }
-                else
-                {
-                    break; // Stop counting if a different ID is encountered
+                    Debug.Log($"Consecutive count met for player with tag {playerTag}");
+                    return true;
                 }
             }
             else
             {
-                // Position not found in dictionary, break or handle accordingly
-                break;
+                consecutiveCount = 0; // Reset count if there's a gap in the sequence
             }
         }
 
-        return count;
+        return false;
+    }
+
+    private bool IsInGridRange(Vector3Int position)
+    {
+        // Check if the position is within the valid range of your grid
+        return position.x >= 0 && position.x <= 3 &&
+               position.z >= 0 && position.z <= 3;  // Assuming the grid is on the y
     }
 }
 public class PlacementData
 {
-    public Vector3Int _occupiedPositions;
     public int _ID { get; private set; }
     public int _placedObjectIndex { get; private set; }
 
-    public PlacementData(Vector3Int occupiedPositions, int ID, int placedObjectIndex)
+    public PlacementData(int ID, int placedObjectIndex)
     {
-        _occupiedPositions = occupiedPositions;
         _ID = ID;
         _placedObjectIndex = placedObjectIndex;
     }
+    public void SetID(int ID)
+    {
+        _ID = ID;
+    }
 }
-
-

@@ -26,8 +26,6 @@ public class PlacementSystem : MonoBehaviour
 
     private bool whiteWins = false;
     private bool blackWins = false;
-    private bool isDraw = false;
-    private bool firstTurn = true;
 
     private void Awake() 
     {
@@ -68,47 +66,30 @@ public class PlacementSystem : MonoBehaviour
 
         sphereData.AddObjectAt(gridPosition,
             database.objects[selectedObjectIndex].Size,
-            database.objects[selectedObjectIndex].ID,
+            currentPlayer,
             selectedObjectIndex);
 
         StopPlacement();
-        if(!firstTurn)
-            RotatePositions();
-        StartCoroutine(EndTurn(1.0f));
-        firstTurn = false;
+        RotatePositions();
+        StartCoroutine(EndTurn(0.5f));
     }
 
     private IEnumerator EndTurn(float duration)
     {
         float elapsedTime = 0f;
-        Vector3 startingPosition = transform.position;
 
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
             yield return null;
         }
-        // Then, based on the results, you can handle the game state accordingly
-        if (whiteWins && blackWins)
-        {
-            Debug.Log("It's a draw!");
-            // Handle the draw
-        }
-        else if (whiteWins)
-        {
-            Debug.Log("White wins!");
-            // Handle white wins
-        }
-        else if (blackWins)
-        {
-            Debug.Log("Black wins!");
-            // Handle black wins
-        }
+        if(sphereData.CheckWinCondition("Player1", grid)) whiteWins = true;
+        if(sphereData.CheckWinCondition("Player2", grid)) blackWins = true;
         currentPlayer = (currentPlayer == 1) ? 2 : 1;
         StartPlacement(currentPlayer);
         sphereData.ClearPositions();
     }
-
+    
     private void RotatePositions()
     {
         foreach (var item in placedGameObject)
@@ -116,26 +97,10 @@ public class PlacementSystem : MonoBehaviour
             Vector3Int oldPosition = grid.WorldToCell(item.transform.position);
 
             // Call the UpdateGridData function to get the new position
-            Vector3Int newPosition = sphereData.UpdateGridData(oldPosition);
+            Vector3Int newPosition = sphereData.UpdateGridData(oldPosition, currentPlayer);
 
             // Smoothly move the game object to the new position using Lerp
             StartCoroutine(MoveObjectLerp(item.transform, grid.CellToWorld(newPosition), 0.25f));
-
-            if (sphereData.CheckFourSpheresInARow(1))
-            {
-                whiteWins = true;
-            }
-
-            if (sphereData.CheckFourSpheresInARow(2))
-            {
-                blackWins = true;
-            }
-
-            // Check for a draw
-            if (!whiteWins && !blackWins && AllSpheresPlaced())
-            {
-                isDraw = true;
-            }
         }
     }
 
@@ -176,7 +141,7 @@ public class PlacementSystem : MonoBehaviour
     private bool AllSpheresPlaced()
     {
         // Check if the total number of placed spheres equals the expected total
-        int totalExpectedSpheres = database.objects.Count; // Assuming each object has only one sphere
+        int totalExpectedSpheres = 16;
         return placedGameObject.Count == totalExpectedSpheres;
     }
 }
