@@ -62,17 +62,8 @@ public class GridData
         if (placedObjects.ContainsKey(oldPosition))
         {
             PlacementData data = placedObjects[oldPosition];
-            // Add the object to the new position
-            placedObjects[newPosition] = data;
             positionsToKeep[newPosition] = data;
 
-            // Check if the old position is in positionsToKeep
-            if (!positionsToKeep.ContainsKey(oldPosition))
-            {
-                // If it's not in positionsToKeep, remove it
-                placedObjects.Remove(oldPosition);
-                
-            }
             return newPosition;
         }
         else
@@ -83,6 +74,11 @@ public class GridData
     }
     public void ClearPositions()
     {
+        placedObjects.Clear();
+        foreach (var entry in positionsToKeep)
+        {
+            placedObjects[entry.Key] = entry.Value;
+        }
         positionsToKeep.Clear();
     }
     private bool IsInInnerGrid(Vector3Int position)
@@ -143,58 +139,40 @@ public class GridData
     #endregion
 
     #region Grid Searching and clearing
-    public bool CheckWinCondition(string playerTag, Grid grid)
+    public bool CheckWinCondition(int targetID)
     {
         foreach (var position in placedObjects.Keys)
         {
-            if (CheckConsecutive(position, playerTag, new Vector3Int(1, 0, 0), grid) ||  // Check horizontally (right)
-                CheckConsecutive(position, playerTag, new Vector3Int(0, 0, 1), grid) ||  // Check vertically (down)
-                CheckConsecutive(position, playerTag, new Vector3Int(1, 0, 1), grid) ||  // Check diagonally (up-right)
-                CheckConsecutive(position, playerTag, new Vector3Int(1, 0, -1), grid))    // Check diagonally (up-left)
+            if (CheckDirection(position, targetID, new Vector3Int(1, 0, 0)) ||  // Check horizontally
+                CheckDirection(position, targetID, new Vector3Int(0, 0, 1)) ||  // Check vertically
+                CheckDirection(position, targetID, new Vector3Int(1, 0, 1)) ||  // Check diagonally (up-right)
+                CheckDirection(position, targetID, new Vector3Int(1, 0, -1)))    // Check diagonally (up-left)
             {
-                Debug.Log($"Win condition met for player with tag {playerTag} at position {position}");
                 return true;
             }
         }
 
         return false;
     }
-    private bool CheckConsecutive(Vector3Int start, string playerTag, Vector3Int direction, Grid grid)
-    {
-        int consecutiveCount = 0;
 
-        for (int i = -2; i <= 2; i++) // Iterate over a larger range to check three consecutive placements
+    private bool CheckDirection(Vector3Int start, int targetID, Vector3Int direction)
+    {
+        for (int i = 0; i < 4; i++)
         {
             Vector3Int currentPos = start + (direction * i);
-
-            // Use GameObject.FindGameObjectsWithTag to find game objects with the specified tag
-            GameObject[] spheresWithTag = GameObject.FindGameObjectsWithTag(playerTag);
-
-            // Convert the positions of the spheres to grid positions
-            Vector3Int[] sphereGridPositions = Array.ConvertAll(spheresWithTag, sphere => grid.WorldToCell(sphere.transform.position));
-
-            // Check if the current position is in the array of grid positions
-            if (Array.Exists(sphereGridPositions, pos => pos == currentPos))
+            if (!placedObjects.TryGetValue(currentPos, out var data) || data._ID != targetID)
             {
-                consecutiveCount++;
-
-                if (consecutiveCount == 4)
-                {
-                    Debug.Log($"Consecutive count met for player with tag {playerTag}");
-                    return true;
-                }
-            }
-            else
-            {
-                consecutiveCount = 0; // Reset count if there's a gap in the sequence
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
+
     public void ClearObjects()
     {
         placedObjects.Clear();
+        positionsToKeep.Clear();
     }
     #endregion
 }

@@ -134,6 +134,9 @@ public class PlacementSystem : MonoBehaviour
     {
         float elapsedTime = 0f;
 
+        // Clear sphere positions and update positions for the next turn
+        sphereData.ClearPositions();
+
         // Wait for the specified duration
         while (elapsedTime < duration)
         {
@@ -141,8 +144,8 @@ public class PlacementSystem : MonoBehaviour
             yield return null;
         }
 
-        bool whiteWinsThisTurn = sphereData.CheckWinCondition("Player1", grid);
-        bool blackWinsThisTurn = sphereData.CheckWinCondition("Player2", grid);
+        bool whiteWinsThisTurn = sphereData.CheckWinCondition(1);
+        bool blackWinsThisTurn = sphereData.CheckWinCondition(2);
 
         // Check win conditions and update game state
         if (whiteWinsThisTurn && blackWinsThisTurn)
@@ -186,9 +189,6 @@ public class PlacementSystem : MonoBehaviour
 
             // Start object placement for the next player
             StartPlacement(currentPlayer);
-
-            // Clear sphere positions for the next turn
-            sphereData.ClearPositions();
         }
     }
 
